@@ -1,0 +1,52 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# eslint cache
+.eslintcache
+
+# Output directories
+/build
+/dist
+/out
+.next
+.nuxt
+
+# Env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# IDE / OS specific files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Capacitor / Mobile files (ignore target Android Gradle builds)
+/frontend/android/app/build/
+/frontend/android/.gradle/
+/frontend/android/local.properties
+/frontend/android/captmp/
+
+# Scratch directory
+scratch/

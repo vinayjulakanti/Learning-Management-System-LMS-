@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: lumina-lms-backend
+    env: node
+    plan: free
+    rootDir: Lms-main/Lumina-LMS-backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+        placeholder: "mongodb+srv://user:pass@cluster.mongodb.net/dbname"
+      - key: JWT_SECRET
+        sync: false
+        placeholder: "A long random secret string"

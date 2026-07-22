@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Lumina LMS">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="32" ry="32" fill="#ffffff"/>
+  <g opacity="0.2">
+    <circle cx="256" cy="256" r="200" fill="url(#g)"/>
+  </g>
+  <g fill="#0f172a">
+    <path d="M96 208l160-88 160 88-160 88-160-88z" fill="#3B82F6"/>
+    <path d="M136 232v96c0 8.8 7.2 16 16 16h208c8.8 0 16-7.2 16-16v-96l-120 66c-4.9 2.7-10.9 2.7-15.8 0L136 232z" fill="#10B981"/>
+  </g>
+  <text x="50%" y="88%" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="56" fill="#3B82F6">LMS</text>
+</svg>

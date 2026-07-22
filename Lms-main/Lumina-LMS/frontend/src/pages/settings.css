@@ -1,0 +1,6 @@
+.settings-panel input{color:#000;box-sizing:border-box;max-width:100%}
+.settings-panel label{font-size:1.05rem}
+.settings-panel .input.rounded{border-radius:9999px;width:100%}
+.settings-panel .password-field{position:relative}
+.settings-panel .password-field .input.rounded{padding:14px 44px 14px 18px;width:100%;box-sizing:border-box}
+.settings-panel .password-field .eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:#64748b;cursor:pointer}

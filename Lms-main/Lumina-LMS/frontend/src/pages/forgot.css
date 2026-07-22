@@ -1,0 +1,12 @@
+.forgot-layout{display:grid;grid-template-columns:1fr;place-items:center;min-height:calc(100vh - 60px)}
+.page-watermark{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:60vmin;height:60vmin;background-position:center;background-size:contain;background-repeat:no-repeat;opacity:.06;pointer-events:none;user-select:none}
+.forgot-panel{max-width:720px;margin:24px auto;padding:24px}
+.input.rounded{border-radius:9999px}
+.forgot-panel input{color:#000;font-size:1.05rem}
+.forgot-panel label{font-size:1.1rem}
+.pill{display:inline-flex;justify-content:center;align-items:center;width:100%;padding:14px 18px;border:none;border-radius:9999px;cursor:pointer;font-weight:700;font-size:1rem}
+.pill.primary{background:#60a5fa;color:#061829}
+.pill.primary:hover{background:#3b82f6}
+.alert{background:#0b1224;border:1px solid #1f2937;color:#e5e7eb;padding:10px;border-radius:10px}
+.alert.danger{background:#2b0f12;border-color:#7f1d1d;color:#fecaca}
+.muted{color:#9aa4b2}
