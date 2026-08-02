@@ -2,6 +2,7 @@ const router = require('express').Router();
 const { auth, requireRole } = require('../middleware/auth');
 const Attendance = require('../models/Attendance');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 
 // GET /api/attendance?date=YYYY-MM-DD[&course=ID] - list attendance records for a date (teacher/admin)
 router.get('/attendance', auth(), requireRole('teacher', 'admin'), async (req, res) => {
@@ -58,10 +59,23 @@ router.put('/attendance', auth(), requireRole('teacher', 'admin'), async (req, r
     }
     
     const updated = await Attendance.findOneAndUpdate(
-      { student: studentId, course: courseId, date: String(date).slice(0, 10) },
-      { $set: { status: String(status), course: courseId } },
-      { new: true, upsert: true }
-    );
+  {
+    student: studentId,
+    course: courseId,
+    date: String(date).slice(0, 10),
+  },
+  {
+    $set: {
+      status: String(status),
+      course: courseId,
+      published: false
+    }
+  },
+  {
+    new: true,
+    upsert: true
+  }
+);
     
     if (!updated) {
       console.log('Failed to create/update attendance record');
@@ -110,7 +124,11 @@ router.get('/me/attendance', auth(), async (req, res) => {
     console.log('Getting attendance for student:', req.user._id, 'on date:', date);
     
     // Get attendance records for the student on the specific date
-    const records = await Attendance.find({ student: req.user._id, date })
+    const records = await Attendance.find({
+  student: req.user._id,
+  date,
+  published: true
+})
       .populate('course', 'title')
       .populate('student', 'name email rollNo');
     
@@ -131,7 +149,10 @@ router.get('/me/attendance/all', auth(), requireRole('student'), async (req, res
   try {
     console.log('Getting all attendance for student:', req.user._id);
     
-    const records = await Attendance.find({ student: req.user._id })
+    const records = await Attendance.find({
+  student: req.user._id,
+  published: true
+})
       .populate('course', 'title')
       .sort({ date: -1 });
     
@@ -147,7 +168,12 @@ router.get('/me/attendance/all', auth(), requireRole('student'), async (req, res
 // GET /api/me/attendance/summary - per-course attendance summary for current user
 router.get('/me/attendance/summary', auth(), async (req, res) => {
   const pipeline = [
-    { $match: { student: req.user._id } },
+    {
+  $match: {
+    student: req.user._id,
+    published: true
+  }
+},
     { $group: {
       _id: { course: '$course' },
       total: { $sum: 1 },
@@ -160,5 +186,43 @@ router.get('/me/attendance/summary', auth(), async (req, res) => {
   const items = await Attendance.aggregate(pipeline);
   res.json({ summary: items });
 });
+// Publish attendance
+router.put('/attendance/publish', auth(), requireRole('teacher', 'admin'), async (req, res) => {
+  try {
+    const { courseId, date } = req.body;
 
+    if (!courseId || !date) {
+      return res.status(400).json({
+        message: 'courseId and date are required'
+      });
+    }
+
+    const result = await Attendance.updateMany(
+  {
+    course: courseId,
+    date: String(date).slice(0, 10)
+  },
+  {
+    $set: {
+      published: true,
+      publishedAt: new Date()
+    }
+  }
+);
+
+console.log("Publish Result:", result);
+
+    res.json({
+      success: true,
+      message: 'Attendance Published Successfully'
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      message: err.message
+    });
+  }
+});
 module.exports = router;

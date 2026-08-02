@@ -39,9 +39,11 @@ import ActivityTrackerPage from './pages/ActivityTrackerPage';
 function DashboardWrapper() {
   const { user } = useAuth();
   const role = String(user?.role || '').toLowerCase();
+
   if (role === 'teacher' || role === 'admin') {
     return <AdminDashboard />;
   }
+
   return <ModernDashboard />;
 }
 
@@ -128,7 +130,7 @@ export default function App() {
           path="/courses/new"
           element={
             <ProtectedRoute>
-              <Header />
+              <ModernLayout />
               <CourseCreate />
             </ProtectedRoute>
           }
@@ -137,8 +139,9 @@ export default function App() {
           path="/courses/:id"
           element={
             <ProtectedRoute>
-              <Header />
-              <CourseDetail />
+              <ModernLayout>
+                <CourseDetail />
+              </ModernLayout>
             </ProtectedRoute>
           }
         />
@@ -146,17 +149,29 @@ export default function App() {
           path="/attendance"
           element={
             <ProtectedRoute>
-              <Header />
-              <Attendance />
+              <ModernLayout>
+                <Attendance />
+              </ModernLayout>
             </ProtectedRoute>
           }
         />
         <Route
+  path="/timetable"
+  element={
+    <ProtectedRoute>
+      <ModernLayout>
+        <Timetable />
+      </ModernLayout>
+    </ProtectedRoute>
+  }
+/>
+        <Route
           path="/holidays"
           element={
             <ProtectedRoute>
-              <Header />
-              <Holidays />
+              <ModernLayout>
+                <Holidays />
+              </ModernLayout>
             </ProtectedRoute>
           }
         />
@@ -174,8 +189,9 @@ export default function App() {
           path="/leave"
           element={
             <ProtectedRoute>
-              <Header />
-              <Leave />
+              <ModernLayout>
+                <Leave />
+              </ModernLayout>
             </ProtectedRoute>
           }
         />
@@ -183,8 +199,9 @@ export default function App() {
           path="/leave-approvals"
           element={
             <ProtectedRoute>
-              <Header />
-              <LeaveApprovals />
+              <ModernLayout>
+                <LeaveApprovals />
+              </ModernLayout>
             </ProtectedRoute>
           }
         />
@@ -192,8 +209,9 @@ export default function App() {
           path="/settings"
           element={
             <ProtectedRoute>
-              <Header />
-              <Settings />
+              <ModernLayout>
+                <Settings />
+              </ModernLayout>
             </ProtectedRoute>
           }
         />
@@ -201,8 +219,9 @@ export default function App() {
           path="/feedback"
           element={
             <ProtectedRoute>
-              <Header />
-              <Feedback />
+              <ModernLayout>
+                <Feedback />
+              </ModernLayout>
             </ProtectedRoute>
           }
         />
@@ -210,8 +229,9 @@ export default function App() {
           path="/billing"
           element={
             <ProtectedRoute>
-              <Header />
-              <Billing />
+              <ModernLayout>
+                <Billing />
+              </ModernLayout>
             </ProtectedRoute>
           }
         />
@@ -219,8 +239,9 @@ export default function App() {
           path="/messages"
           element={
             <ProtectedRoute>
-              <Header />
-              <Messages />
+              <ModernLayout>
+                <Messages />
+              </ModernLayout>
             </ProtectedRoute>
           }
         />
@@ -228,8 +249,9 @@ export default function App() {
           path="/fee-management"
           element={
             <ProtectedRoute>
-              <Header />
-              <FeeManagement />
+              <ModernLayout>
+                <FeeManagement />
+              </ModernLayout>
             </ProtectedRoute>
           }
         />
@@ -237,8 +259,9 @@ export default function App() {
           path="/tasks"
           element={
             <ProtectedRoute>
-              <Header />
-              <Tasks />
+              <ModernLayout>
+                <Tasks />
+              </ModernLayout>
             </ProtectedRoute>
           }
         />

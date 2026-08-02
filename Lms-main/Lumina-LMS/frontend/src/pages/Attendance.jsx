@@ -198,6 +198,25 @@ export default function Attendance(){
       alert(errorMsg);
     }
   };
+  const publishAttendance = async () => {
+  try {
+    await AttendanceAPI.publish({
+      courseId: selectedCourse,
+      date,
+    });
+
+    alert("✅ Attendance Published Successfully");
+
+    loadRosterAndAttendance();
+  } catch (err) {
+    console.error(err);
+    alert("❌ Failed to publish attendance");
+  }
+};
+
+const saveDraft = () => {
+  alert("✅ Attendance Saved");
+};
 
   return (
     <div className="container" style={{padding:16}}>
@@ -226,20 +245,69 @@ export default function Attendance(){
               <div className="muted">No students enrolled in this course.</div>
             ) : (
               <div className="list">
-                {roster.map(s => (
-                  <div key={s._id} className="row" style={{alignItems:'center', gap:8}}>
-                    <div style={{minWidth:220}}>
-                      <div style={{fontWeight:600}}>{s.name}</div>
-                      <div className="muted small">Roll no: {s.rollNo || 'N/A'}</div>
-                    </div>
-                    <div className="tag" style={{marginLeft:'auto'}}>{(statuses[s._id]||'').toUpperCase() || '—'}</div>
-                    <div style={{display:'flex', gap:6}}>
-                      <button className="btn" onClick={()=>setFor(s._id, 'present')}>Present ✅</button>
-                      <button className="btn" onClick={()=>setFor(s._id, 'absent')}>Absent ❌</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+  {roster.map((s) => (
+    <div
+      key={s._id}
+      className="row"
+      style={{ alignItems: "center", gap: 8 }}
+    >
+      <div style={{ minWidth: 220 }}>
+        <div style={{ fontWeight: 600 }}>{s.name}</div>
+        <div className="muted small">
+          Roll no: {s.rollNo || "N/A"}
+        </div>
+      </div>
+
+      <div
+        className="tag"
+        style={{ marginLeft: "auto" }}
+      >
+        {(statuses[s._id] || "").toUpperCase() || "—"}
+      </div>
+
+      <div style={{ display: "flex", gap: 6 }}>
+        <button
+          className="btn"
+          onClick={() => setFor(s._id, "present")}
+        >
+          Present ✅
+        </button>
+
+        <button
+          className="btn"
+          onClick={() => setFor(s._id, "absent")}
+        >
+          Absent ❌
+        </button>
+      </div>
+    </div>
+  ))}
+
+  {/* Buttons */}
+
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "flex-end",
+      gap: 15,
+      marginTop: 25,
+    }}
+  >
+    <button
+      className="btn"
+      onClick={saveDraft}
+    >
+      💾 Save
+    </button>
+
+    <button
+      className="btn primary"
+      onClick={publishAttendance}
+    >
+      📢 Publish
+    </button>
+  </div>
+</div>
             )}
           </div>
         ) : (

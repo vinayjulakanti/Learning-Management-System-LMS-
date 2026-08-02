@@ -6,8 +6,7 @@ import { NotificationsAPI, CoursesAPI } from '../api/client';
 export default function ModernLayout({ children }) {
   const { user, logout } = useAuth();
   const location = useLocation();
-  const sidebarOpen = true; // Sidebar is fixed open
-  const setSidebarOpen = () => {};
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem('theme');
@@ -268,15 +267,94 @@ export default function ModernLayout({ children }) {
     };
   }, [user]);
 
-  const menuItems = [
-    { path: '/dashboard', icon: '📊', label: 'Dashboard' },
-    { path: '/courses', icon: '📖', label: 'Courses' },
-    { path: '/assignments', icon: '📝', label: 'Assignments' },
-    { path: '/grades', icon: '🎓', label: 'Grades' }
-  ];
-  if (user && (String(user.role).toLowerCase() === 'teacher' || String(user.role).toLowerCase() === 'admin')) {
-    menuItems.push({ path: '/activity', icon: '⏱️', label: 'Activity' });
+  const role = String(user?.role || "").toLowerCase();
+
+const menuItems = [
+  {
+    path: "/dashboard",
+    icon: "📊",
+    label: "Dashboard",
+    roles: ["student", "teacher", "admin"]
+  },
+  {
+    path: "/courses",
+    icon: "📚",
+    label: "Courses",
+    roles: ["student", "teacher", "admin"]
+  },
+  {
+    path: "/assignments",
+    icon: "📝",
+    label: "Assignments",
+    roles: ["student", "teacher", "admin"]
+  },
+  {
+    path: "/attendance",
+    icon: "📅",
+    label: "Attendance",
+    roles: ["student", "teacher", "admin"]
+  },
+  {
+    path: "/timetable",
+    icon: "🕒",
+    label: "Timetable",
+    roles: ["student", "teacher", "admin"]
+  },
+  {
+    path: "/grades",
+    icon: "🎓",
+    label: "Grades",
+    roles: ["student", "teacher", "admin"]
+  },
+  {
+    path: "/leave",
+    icon: "🏖️",
+    label: "Leave",
+    roles: ["student", "teacher"]
+  },
+  {
+    path: "/feedback",
+    icon: "💬",
+    label: "Feedback",
+    roles: ["student", "teacher"]
+  },
+  {
+    path: "/billing",
+    icon: "💳",
+    label: "Billing",
+    roles: ["student"]
+  },
+  {
+    path: "/messages",
+    icon: "✉️",
+    label: "Messages",
+    roles: ["student", "teacher", "admin"]
+  },
+  {
+    path: "/tasks",
+    icon: "✅",
+    label: "Tasks",
+    roles: ["teacher", "admin"]
+  },
+  {
+    path: "/activity",
+    icon: "📈",
+    label: "Activity",
+    roles: ["teacher", "admin"]
+  },
+  {
+    path: "/admin",
+    icon: "👨‍💼",
+    label: "Admin Dashboard",
+    roles: ["admin"]
+  },
+  {
+    path: "/fee-management",
+    icon: "💰",
+    label: "Fee Management",
+    roles: ["admin"]
   }
+].filter(item => item.roles.includes(role));
 
 
   const isActive = (path) => location.pathname === path;
@@ -288,7 +366,7 @@ export default function ModernLayout({ children }) {
     <div style={{ display: 'flex', height: '100vh', backgroundColor: 'var(--bg)' }}>
       {/* Sidebar */}
       <div style={{
-        width: sidebarOpen ? '260px' : '76px',
+        width: sidebarOpen ? "260px" : "80px",
         backgroundColor: '#0F204C',
         borderRight: 'none',
         transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',

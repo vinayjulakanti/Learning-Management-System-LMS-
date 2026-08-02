@@ -57,11 +57,28 @@ export const ContentAPI = {
 
 // Attendance endpoints
 export const AttendanceAPI = {
-  listByDate: (date, courseId) => client.get(`/attendance?date=${date}${courseId ? `&course=${courseId}` : ''}`),
-  setStatus: (date, courseId, studentId, status) => client.put('/attendance', { date, courseId, studentId, status }),
-  myForDate: (date) => client.get(`/me/attendance?date=${date}`),
-  myAll: () => client.get(`/me/attendance/all`),
-  mySummary: () => client.get(`/me/attendance/summary`),
+  listByDate: (date, courseId) =>
+    client.get(`/attendance?date=${date}${courseId ? `&course=${courseId}` : ''}`),
+
+  setStatus: (date, courseId, studentId, status) =>
+    client.put('/attendance', {
+      date,
+      courseId,
+      studentId,
+      status,
+    }),
+
+  publish: (data) =>
+    client.put('/attendance/publish', data),
+
+  myForDate: (date) =>
+    client.get(`/me/attendance?date=${date}`),
+
+  myAll: () =>
+    client.get(`/me/attendance/all`),
+
+  mySummary: () =>
+    client.get(`/me/attendance/summary`),
 };
 
 // Notifications endpoints

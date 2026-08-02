@@ -1,9 +1,17 @@
+const nodemailer = require("nodemailer");
 const router = require('express').Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 const crypto = require('crypto');
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 function sign(user) {
   const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'dev_secret', { expiresIn: '7d' });
@@ -199,20 +207,72 @@ router.post('/change-password', auth(), async (req, res) => {
   }
 });
 
-router.post('/forgot', async (req, res) => {
+router.post("/forgot", async (req, res) => {
   try {
     const { email } = req.body;
-    if (!email) return res.status(400).json({ message: 'Email is required' });
-    const user = await User.findOne({ email: (email || '').toLowerCase() });
-    if (!user) return res.json({ message: 'If an account exists, a reset link has been sent' });
-    const token = crypto.randomBytes(32).toString('hex');
+
+    if (!email)
+      return res.status(400).json({
+        message: "Email is required",
+      });
+
+    const user = await User.findOne({
+      email: email.toLowerCase(),
+    });
+
+    if (!user) {
+      return res.json({
+        message: "If the account exists, a reset link has been sent.",
+      });
+    }
+
+    const token = crypto.randomBytes(32).toString("hex");
+
     user.resetToken = token;
-    user.resetTokenExp = new Date(Date.now() + 60 * 60 * 1000);
+    user.resetTokenExp = Date.now() + 3600000;
+
     await user.save();
-    const resetUrl = `${process.env.FRONTEND_BASE_URL || 'http://localhost:3001'}/reset?token=${token}`;
-    res.json({ message: 'Reset link sent', resetUrl });
-  } catch (e) {
-    res.status(500).json({ message: 'Failed to process request' });
+
+    const resetUrl =
+      `${process.env.FRONTEND_BASE_URL}/reset?token=${token}`;
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: user.email,
+      subject: "Lumina LMS Password Reset",
+      html: `
+      <h2>Password Reset</h2>
+
+      <p>Hello ${user.name},</p>
+
+      <p>Click the button below to reset your password.</p>
+
+      <a href="${resetUrl}"
+      style="
+      padding:12px 20px;
+      background:#2563eb;
+      color:white;
+      text-decoration:none;
+      border-radius:6px;
+      ">
+      Reset Password
+      </a>
+
+      <br><br>
+
+      <small>This link expires in 1 hour.</small>
+      `,
+    });
+
+    res.json({
+      message: "Password reset link sent to your email.",
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      message: "Unable to send email",
+    });
   }
 });
 

@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { CoursesAPI, CertificatesAPI, AssignmentsAPI, NotificationsAPI } from '../api/client';
+import {
+  CoursesAPI,
+  CertificatesAPI,
+  AssignmentsAPI,
+  NotificationsAPI,
+  AttendanceAPI
+} from '../api/client';
 
 export default function ModernDashboard() {
   const { user } = useAuth();
@@ -10,6 +16,7 @@ export default function ModernDashboard() {
   const [certificates, setCertificates] = useState([]);
   const [submissions, setSubmissions] = useState([]);
   const [notifs, setNotifs] = useState([]);
+  const [attendanceSummary, setAttendanceSummary] = useState([]);
   const [loading, setLoading] = useState(true);
   const [timeData, setTimeData] = useState({});
   const [browseHover, setBrowseHover] = useState(false);
@@ -51,6 +58,11 @@ export default function ModernDashboard() {
         setCertificates(cRes.data?.certificates || []);
         setSubmissions(sRes.data?.submissions || []);
         setNotifs(nRes.data?.notifications || []);
+        const attendanceRes = await AttendanceAPI.mySummary().catch(() => ({
+  data: { summary: [] }
+}));
+
+setAttendanceSummary(attendanceRes.data.summary || []);
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
       } finally {
@@ -73,6 +85,20 @@ export default function ModernDashboard() {
   // Active time calculations
   const totalSeconds = useMemo(() => Object.values(timeData).reduce((a, b) => a + b, 0), [timeData]);
   const totalHours = (totalSeconds / 3600).toFixed(1);
+  const totalClasses = attendanceSummary.reduce(
+  (sum, item) => sum + item.total,
+  0
+);
+
+const totalPresent = attendanceSummary.reduce(
+  (sum, item) => sum + item.presents,
+  0
+);
+
+const attendancePercentage =
+  totalClasses === 0
+    ? 0
+    : Math.round((totalPresent / totalClasses) * 100);
   const activeDays = useMemo(() => Object.keys(timeData).filter(day => timeData[day] > 0).length, [timeData]);
   
   const todayStr = useMemo(() => {
@@ -255,11 +281,35 @@ export default function ModernDashboard() {
       {/* Grid: 4-Column Stats & Daily Goal progress */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '24px' }}>
         {[
-          { title: 'Total Study Time', val: `${totalHours} hrs`, desc: `${activeDays} active days logged`, icon: '⏱️', class: 'dashboard-card-grad-blue' },
-          { title: 'Courses Joined', val: enrollments.length, desc: `${enrollments.filter(e => e.status === 'completed').length} completed`, icon: '📚', class: 'dashboard-card-grad-green' },
-          { title: 'Quiz Score Avg', val: '86%', desc: 'Based on recent quizzes', icon: '📝', class: 'dashboard-card-grad-purple' },
-          { title: 'Certificates Won', val: certificates.length, desc: 'Verified accomplishments', icon: '🎓', class: 'dashboard-card-grad-orange' }
-        ].map((card, idx) => (
+  {
+    title: 'Total Study Time',
+    val: `${totalHours} hrs`,
+    desc: `${activeDays} active days logged`,
+    icon: '⏱️',
+    class: 'dashboard-card-grad-blue'
+  },
+  {
+    title: 'Courses Joined',
+    val: enrollments.length,
+    desc: `${enrollments.filter(e => e.status === 'completed').length} completed`,
+    icon: '📚',
+    class: 'dashboard-card-grad-green'
+  },
+  {
+    title: 'Attendance',
+    val: `${attendancePercentage}%`,
+    desc: `${totalPresent}/${totalClasses} Classes Present`,
+    icon: '📅',
+    class: 'dashboard-card-grad-purple'
+  },
+  {
+    title: 'Certificates Won',
+    val: certificates.length,
+    desc: 'Verified accomplishments',
+    icon: '🎓',
+    class: 'dashboard-card-grad-orange'
+  }
+].map((card, idx) => (
           <div key={idx} className={`card hover-lift ${card.class}`} style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ textAlign: 'left' }}>
               <span style={{ fontSize: '0.78rem', textTransform: 'uppercase', fontWeight: '800', color: 'var(--text)', letterSpacing: '0.05em' }}>{card.title}</span>
