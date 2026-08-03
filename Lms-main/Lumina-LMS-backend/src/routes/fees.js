@@ -23,17 +23,32 @@ router.post('/fees', auth(), requireRole('teacher', 'admin'), async (req, res) =
     }
 
     console.log('Creating fee with validated data...');
-    const fee = await Fee.create({
-      name: String(name),
-      amount: parsedAmount,
-      type: String(type), // monthly, one-time, semester, annual
-      dueDate: String(dueDate),
-      description: String(description || ''),
-      applicableTo: applicableTo || 'all', // all, specific-students, specific-courses
-      createdBy: req.user._id
-    });
+   const User = require("../models/User");
 
-    console.log('Fee created successfully:', fee._id);
+const students = await User.find({ role: "student" });
+
+const createdFees = [];
+
+for (const student of students) {
+
+  const fee = await Fee.create({
+    name: String(name),
+    amount: parsedAmount,
+    paidAmount: 0,
+    remainingAmount: parsedAmount,
+    type: String(type),
+    dueDate: String(dueDate),
+    description: String(description || ""),
+    applicableTo: "all",
+    student: student._id,
+    createdBy: req.user._id,
+    status: "pending"
+  });
+
+  createdFees.push(fee);
+}
+
+console.log("Created fees:", createdFees.length);
 
     // Create notification for students about new fee (with error handling)
     try {
@@ -66,7 +81,11 @@ router.post('/fees', auth(), requireRole('teacher', 'admin'), async (req, res) =
     }
 
     console.log('Sending success response');
-    res.status(201).json({ fee });
+    res.status(201).json({
+  message: "Fee assigned to all students successfully.",
+  count: createdFees.length,
+  fees: createdFees
+});
   } catch (error) {
     console.error('Error creating fee:', error);
     console.error('Error stack:', error.stack);
@@ -81,17 +100,16 @@ router.get('/fees', auth(), async (req, res) => {
     
     if (userRole === 'student') {
       // Students can see all fees that apply to them
-      const fees = await Fee.find({ 
-        $or: [
-          { applicableTo: 'all' },
-          // TODO: Add logic for specific students/courses
-        ]
-      }).sort({ createdAt: -1 });
+      const fees = await Fee.find({
+  student: req.user._id
+}).sort({ createdAt: -1 });
       
       res.json({ fees });
     } else {
       // Teachers and admins can see all fees
-      const fees = await Fee.find({}).sort({ createdAt: -1 });
+      const fees = await Fee.find({})
+  .populate("student", "name email rollNo")
+  .sort({ createdAt: -1 });
       res.json({ fees });
     }
   } catch (error) {
@@ -148,30 +166,58 @@ router.delete('/fees/:id', auth(), requireRole('admin'), async (req, res) => {
 
 // POST /api/fees/:id/pay - mark fee as paid (student)
 router.post('/fees/:id/pay', auth(), requireRole('student'), async (req, res) => {
-  try {
-    const { paymentMethod, transactionId } = req.body || {};
-    
-    const fee = await Fee.findByIdAndUpdate(
-      req.params.id,
-      {
-        status: 'paid',
-        paidBy: req.user._id,
-        paidAt: new Date(),
-        paymentMethod: paymentMethod || 'online',
-        transactionId: transactionId || `TXN${Date.now()}`
-      },
-      { new: true }
-    );
 
-    if (!fee) {
-      return res.status(404).json({ message: 'Fee not found' });
+  try {
+
+    const { amount } = req.body;
+
+    const fee = await Fee.findById(req.params.id);
+    if (fee.student.toString() !== req.user._id.toString()) {
+  return res.status(403).json({
+    message: "You cannot pay another student's fee."
+  });
+}
+
+    if (!fee)
+      return res.status(404).json({ message: "Fee not found" });
+
+    const payAmount = Number(amount);
+
+    if (payAmount <= 0)
+      return res.status(400).json({ message: "Invalid amount" });
+
+    if (payAmount > fee.remainingAmount)
+      return res.status(400).json({ message: "Amount exceeds remaining balance" });
+
+    fee.paidAmount += payAmount;
+
+    fee.remainingAmount -= payAmount;
+
+    fee.payments.push({
+      amount: payAmount,
+      paidAt: new Date()
+    });
+
+    if (fee.remainingAmount === 0) {
+      fee.status = "paid";
+    } else {
+      fee.status = "partial";
     }
 
-    res.json({ fee });
-  } catch (error) {
-    console.error('Error marking fee as paid:', error);
-    res.status(500).json({ message: 'Failed to process payment' });
-  }
-});
+    await fee.save();
 
+    res.json({
+      message: "Payment Successful",
+      fee
+    });
+
+  } catch (err) {
+
+    res.status(500).json({
+      message: err.message
+    });
+
+  }
+
+});
 module.exports = router;

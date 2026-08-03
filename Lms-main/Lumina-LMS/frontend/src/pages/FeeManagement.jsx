@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { FeesAPI } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
+
 export default function FeeManagement() {
   const { user } = useAuth();
+  const [search, setSearch] = useState("");
   const [fees, setFees] = useState([]);
   const [paymentStats, setPaymentStats] = useState({
     totalFees: 0,
@@ -62,9 +64,10 @@ export default function FeeManagement() {
     }
   };
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+   
     // Enhanced validation
     if (!formData.name || !formData.amount || !formData.dueDate || !formData.type) {
       const missingFields = [];
@@ -216,7 +219,14 @@ export default function FeeManagement() {
         {/* Payment Statistics Dashboard */}
         <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(250px, 1fr))', gap:16, marginBottom:24}}>
           <div className="card" style={{background:'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color:'white', padding:20, borderRadius:12}}>
-            <div style={{fontSize:32, fontWeight:'bold', marginBottom:8}}>{paymentStats.totalFees}</div>
+            <div
+style={{
+fontSize:38,
+fontWeight:"bold",
+marginBottom:8,
+animation:"pulse 2s infinite"
+}}
+>{paymentStats.totalFees}</div>
             <div style={{fontSize:14, opacity:0.9}}>Total Fees Created</div>
             <div style={{fontSize:18, fontWeight:600, marginTop:8}}>{formatCurrency(paymentStats.totalAmount)}</div>
           </div>
@@ -243,7 +253,56 @@ export default function FeeManagement() {
             </div>
           </div>
         </div>
+{/* Collection Progress */}
+<div
+  style={{
+    background: "#fff",
+    padding: 25,
+    borderRadius: 15,
+    marginBottom: 25,
+    boxShadow: "0 5px 20px rgba(0,0,0,.08)"
+  }}
+>
+  <h3 style={{ marginBottom: 15 }}>
+    📈 Collection Progress
+  </h3>
 
+  <div
+    style={{
+      height: 18,
+      background: "#eee",
+      borderRadius: 20,
+      overflow: "hidden"
+    }}
+  >
+    <div
+      style={{
+        height: "100%",
+        width: `${
+          paymentStats.totalAmount
+            ? (paymentStats.paidAmount / paymentStats.totalAmount) * 100
+            : 0
+        }%`,
+        background: "linear-gradient(90deg,#22c55e,#16a34a)"
+      }}
+    />
+  </div>
+
+  <div
+    style={{
+      marginTop: 10,
+      fontWeight: "bold",
+      color: "#16a34a"
+    }}
+  >
+    {paymentStats.totalAmount
+      ? Math.round(
+          (paymentStats.paidAmount / paymentStats.totalAmount) * 100
+        )
+      : 0}
+    % Collected
+  </div>
+</div>
         {/* Create/Edit Fee Form */}
         {showCreateForm && (
           <div style={{
@@ -346,7 +405,22 @@ export default function FeeManagement() {
             </form>
           </div>
         )}
-
+<div style={{ marginBottom:20 }}>
+  <input
+    type="text"
+    placeholder="🔍 Search fee..."
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+    style={{
+      width: "100%",
+      padding: "14px 18px",
+      borderRadius: 12,
+      border: "1px solid #ddd",
+      fontSize: 15,
+      outline: "none"
+    }}
+  />
+</div>
         {/* Fees List */}
         <div className="card" style={{background:'var(--color-bg)', padding:20, borderRadius:12, marginBottom:24}}>
           <h3 style={{marginTop:0, marginBottom:16}}>📋 Created Fees</h3>
@@ -365,106 +439,100 @@ export default function FeeManagement() {
               <table style={{width:'100%', borderCollapse:'collapse'}}>
                 <thead>
                   <tr style={{borderBottom:'2px solid var(--border)'}}>
+                    <th style={{padding:12, textAlign:'left', color:'var(--muted)', fontWeight:600}}>Student</th>
                     <th style={{padding:12, textAlign:'left', color:'var(--muted)', fontWeight:600}}>Fee Name</th>
-                    <th style={{padding:12, textAlign:'left', color:'var(--muted)', fontWeight:600}}>Amount</th>
-                    <th style={{padding:12, textAlign:'left', color:'var(--muted)', fontWeight:600}}>Type</th>
+                    <th style={{padding:12, textAlign:'left', color:'var(--muted)', fontWeight:600}}>Paid</th>
+                    <th style={{padding:12, textAlign:'left', color:'var(--muted)', fontWeight:600}}>Remaining</th>
                     <th style={{padding:12, textAlign:'left', color:'var(--muted)', fontWeight:600}}>Due Date</th>
                     <th style={{padding:12, textAlign:'left', color:'var(--muted)', fontWeight:600}}>Applicable To</th>
                     <th style={{padding:12, textAlign:'left', color:'var(--muted)', fontWeight:600}}>Status</th>
-                    <th style={{padding:12, textAlign:'left', color:'var(--muted)', fontWeight:600}}>Students Paid</th>
                     <th style={{padding:12, textAlign:'left', color:'var(--muted)', fontWeight:600}}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {fees.map(fee => (
-                    <tr key={fee._id} style={{borderBottom:'1px solid var(--border)'}}>
-                      <td style={{padding:12}}>
-                        <div>
-                          <div style={{fontWeight:600, color:'var(--text)'}}>{fee.name}</div>
-                          {fee.description && (
-                            <div style={{fontSize:12, color:'var(--muted)', marginTop:2}}>{fee.description}</div>
-                          )}
-                        </div>
-                      </td>
-                      <td style={{padding:12, fontWeight:600, color:'var(--text)'}}>
-                        {formatCurrency(fee.amount)}
-                      </td>
-                      <td style={{padding:12}}>
-                        <span style={{
-                          background:'var(--color-bg)',
-                          padding:'4px 8px',
-                          borderRadius:6,
-                          fontSize:12,
-                          textTransform:'capitalize'
-                        }}>
-                          {fee.type}
-                        </span>
-                      </td>
-                      <td style={{padding:12, color:'var(--text)'}}>{fee.dueDate}</td>
-                      <td style={{padding:12}}>
-                        <span style={{
-                          background:'var(--color-bg)',
-                          padding:'4px 8px',
-                          borderRadius:6,
-                          fontSize:12,
-                          textTransform:'capitalize'
-                        }}>
-                          {fee.applicableTo.replace('-', ' ')}
-                        </span>
-                      </td>
-                      <td style={{padding:12}}>
-                        <span style={{
-                          background:getStatusColor(fee.status),
-                          color:'white',
-                          padding:'4px 8px',
-                          borderRadius:6,
-                          fontSize:12,
-                          fontWeight:600,
-                          textTransform:'capitalize'
-                        }}>
-                          {fee.status}
-                        </span>
-                      </td>
-                      <td style={{padding:12}}>
-                        <div style={{display:'flex', alignItems:'center', gap:4}}>
-                          <span style={{
-                            background:fee.status === 'paid' ? '#dcfce7' : '#fef3c7',
-                            color:fee.status === 'paid' ? '#166534' : '#92400e',
-                            padding:'4px 8px',
-                            borderRadius:6,
-                            fontSize:11,
-                            fontWeight:600
-                          }}>
-                            {fee.status === 'paid' ? '✓ Paid' : '⏳ Pending'}
-                          </span>
-                        </div>
-                      </td>
-                      <td style={{padding:12}}>
-                        <div style={{display:'flex', gap:4}}>
-                          <button 
-                            className="btn"
-                            onClick={() => handleEdit(fee)}
-                            style={{padding:'4px 8px', fontSize:12}}
-                          >
-                            Edit
-                          </button>
-                          <button 
-                            className="btn"
-                            onClick={() => handleDelete(fee._id)}
-                            style={{padding:'4px 8px', fontSize:12, background:'#fee2e2', color:'#dc2626', border:'none'}}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                  {fees
+.filter(fee =>
+    fee.name.toLowerCase().includes(search.toLowerCase())
+)
+.map(fee => (
+                    <tr key={fee._id} style={{ borderBottom: "1px solid var(--border)" }}>
+
+  {/* Student */}
+  <td style={{ padding: 12 }}>
+    {fee.student?.name || "Unknown"}
+  </td>
+
+  {/* Fee Name */}
+  <td style={{ padding: 12 }}>
+    <b>{fee.name}</b>
+  </td>
+
+  {/* Paid */}
+  <td style={{ padding: 12 }}>
+    {formatCurrency(fee.paidAmount || 0)}
+  </td>
+
+  {/* Remaining */}
+  <td style={{ padding: 12 }}>
+    {formatCurrency(fee.remainingAmount || fee.amount)}
+  </td>
+
+  {/* Due Date */}
+  <td style={{ padding: 12 }}>
+    {fee.dueDate}
+  </td>
+
+  {/* Applicable */}
+  <td style={{ padding: 12 }}>
+    {fee.applicableTo}
+  </td>
+
+  {/* Status */}
+  <td style={{ padding: 12 }}>
+    <span
+      style={{
+        background: getStatusColor(fee.status),
+        color: "#fff",
+        padding: "4px 10px",
+        borderRadius: 6
+      }}
+    >
+      {fee.status}
+    </span>
+  </td>
+
+  {/* Actions */}
+  <td style={{ padding: 12 }}>
+    <button
+      className="btn"
+      onClick={() => handleEdit(fee)}
+    >
+      ✏ Edit
+    </button>
+
+    <button
+      className="btn"
+      onClick={() => handleDelete(fee._id)}
+      style={{
+        marginLeft: 8,
+        background: "#fee2e2",
+        color: "#dc2626"
+      }}
+    >
+      🗑 Delete
+    </button>
+  </td>
+
+</tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
+          
         </div>
       </div>
     </div>
+    
   );
 }

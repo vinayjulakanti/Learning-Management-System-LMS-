@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { FeedbackAPI } from '../api/client';
 
 export default function Feedback() {
   const { user } = useAuth();
@@ -56,25 +57,48 @@ export default function Feedback() {
     setFeedbackHistory(sampleFeedbackHistory);
   }, []);
 
-  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+   const onChange = (eOrName, value) => {
 
+  if (typeof eOrName === "string") {
+
+    setForm({
+      ...form,
+      [eOrName]: value,
+    });
+
+    return;
+  }
+
+  setForm({
+    ...form,
+    [eOrName.target.name]: eOrName.target.value,
+  });
+
+};
+async function loadFeedbackHistory() {
+  try {
+    const { data } = await FeedbackAPI.myFeedback();
+
+    setFeedbackHistory(data.feedbacks || []);
+  } catch (err) {
+    console.log(err);
+  }
+}
   const onSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
       // Simulate API call
-      await new Promise(r => setTimeout(r, 1000));
+      await FeedbackAPI.submit({
+  subject: form.subject,
+  message: form.message,
+  category: form.category,
+  priority: form.priority,
+  rating: form.rating,
+});
       
       // Add to history
-      const newFeedback = {
-        id: feedbackHistory.length + 1,
-        ...form,
-        date: new Date().toISOString().split('T')[0],
-        status: 'pending',
-        response: null
-      };
-      
-      setFeedbackHistory([newFeedback, ...feedbackHistory]);
+      await loadFeedbackHistory();
       setSent(true);
       setForm({ subject: '', message: '', category: 'general', priority: 'medium', rating: 5 });
     } finally {
@@ -229,6 +253,7 @@ export default function Feedback() {
             <div style={{fontSize:18, fontWeight:600, marginBottom:8}}>
               Thank you for your feedback!
             </div>
+            
             <div style={{marginBottom:16}}>
               We appreciate your input and will review it shortly.
             </div>

@@ -7,6 +7,9 @@ const Notification = require('../models/Notification');
 router.post('/leaves', auth(), requireRole('student'), async (req, res) => {
   try {
     const { fromDate, toDate, reason } = req.body || {};
+    console.log("Logged in user:", req.user);
+console.log("Role:", req.user.role);
+
     console.log('Leave application request:', { fromDate, toDate, reason, student: req.user._id });
     
     if (!fromDate || !toDate) {
@@ -62,6 +65,19 @@ router.post('/leaves', auth(), requireRole('student'), async (req, res) => {
 router.get('/leaves/me', auth(), async (req, res) => {
   const items = await Leave.find({ student: req.user._id }).sort({ createdAt: -1 });
   res.json({ leaves: items });
+});
+// GET /api/leaves - list ALL leave requests (teacher/admin)
+router.get('/leaves', auth(), requireRole('teacher','admin'), async (req, res) => {
+  try {
+    const leaves = await Leave.find()
+      .populate('student', 'name email rollNo')
+      .sort({ createdAt: -1 });
+
+    res.json({ leaves });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to load leave requests' });
+  }
 });
 
 // GET /api/leaves/pending - list pending leaves (teacher/admin)

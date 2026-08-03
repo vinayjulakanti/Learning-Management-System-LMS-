@@ -294,6 +294,7 @@ const menuItems = [
     label: "Attendance",
     roles: ["student", "teacher", "admin"]
   },
+  
   {
     path: "/timetable",
     icon: "🕒",
@@ -313,11 +314,23 @@ const menuItems = [
     roles: ["student", "teacher"]
   },
   {
-    path: "/feedback",
-    icon: "💬",
-    label: "Feedback",
-    roles: ["student", "teacher"]
-  },
+  path: "/leave-approvals",
+  icon: "📋",
+  label: "Leave Requests",
+  roles: ["teacher", "admin"]
+},
+  {
+  path: "/feedback",
+  icon: "💬",
+  label: "Feedback",
+  roles: ["student"]
+},
+{
+  path: "/student-feedback",
+  icon: "📝",
+  label: "Student Feedback",
+  roles: ["teacher", "admin"]
+},
   {
     path: "/billing",
     icon: "💳",
@@ -352,10 +365,9 @@ const menuItems = [
     path: "/fee-management",
     icon: "💰",
     label: "Fee Management",
-    roles: ["admin"]
+    roles: ["teacher","admin"]
   }
-].filter(item => item.roles.includes(role));
-
+].filter(link => !link.roles || link.roles.includes(user.role))
 
   const isActive = (path) => location.pathname === path;
 

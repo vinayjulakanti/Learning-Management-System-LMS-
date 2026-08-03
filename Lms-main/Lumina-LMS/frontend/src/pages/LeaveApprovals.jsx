@@ -11,7 +11,7 @@ export default function LeaveApprovals() {
     setError('');
     try {
       console.log('Loading pending leaves...');
-      const { data } = await LeavesAPI.pending();
+      const { data } = await LeavesAPI.list();
       console.log('Pending leaves response:', data);
       
       const leavesList = Array.isArray(data?.leaves) ? data.leaves : [];
@@ -111,41 +111,48 @@ export default function LeaveApprovals() {
                 </div>
                 
                 <div style={{display:'flex', gap:8}}>
-                  <button 
-                    onClick={()=>act(l._id,'approve')}
-                    style={{
-                      background:'var(--success)', 
-                      color:'white', 
-                      border:'none', 
-                      padding:'8px 16px', 
-                      borderRadius:8,
-                      fontWeight:600,
-                      cursor:'pointer',
-                      transition:'all 0.2s ease'
-                    }}
-                    onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
-                    onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
-                  >
-                    ✓ Approve
-                  </button>
-                  <button 
-                    onClick={()=>act(l._id,'reject')}
-                    style={{
-                      background:'var(--danger)', 
-                      color:'white', 
-                      border:'none', 
-                      padding:'8px 16px', 
-                      borderRadius:8,
-                      fontWeight:600,
-                      cursor:'pointer',
-                      transition:'all 0.2s ease'
-                    }}
-                    onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
-                    onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
-                  >
-                    × Reject
-                  </button>
-                </div>
+  {l.status === "pending" ? (
+    <>
+      <button
+        onClick={() => act(l._id, "approve")}
+        style={{
+          background: "green",
+          color: "white",
+          border: "none",
+          padding: "8px 16px",
+          borderRadius: 8,
+          cursor: "pointer"
+        }}
+      >
+        ✓ Approve
+      </button>
+
+      <button
+        onClick={() => act(l._id, "reject")}
+        style={{
+          background: "red",
+          color: "white",
+          border: "none",
+          padding: "8px 16px",
+          borderRadius: 8,
+          cursor: "pointer"
+        }}
+      >
+        ✕ Reject
+      </button>
+    </>
+  ) : (
+    <span
+      style={{
+        color: l.status === "approved" ? "green" : "red",
+        fontWeight: "bold",
+        fontSize: "16px"
+      }}
+    >
+      {l.status.toUpperCase()}
+    </span>
+  )}
+</div>
               </div>
             ))}
           </div>

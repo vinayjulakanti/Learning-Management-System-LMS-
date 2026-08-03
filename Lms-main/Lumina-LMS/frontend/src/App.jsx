@@ -32,7 +32,7 @@ import Timetable from './pages/Timetable';
 import ResetPassword from './pages/ResetPassword';
 import ForgotPassword from './pages/ForgotPassword';
 import { useAuth } from './context/AuthContext';
-
+import StudentFeedback from "./pages/StudentFeedback";
 import ActivityTracker from './components/ActivityTracker';
 import ActivityTrackerPage from './pages/ActivityTrackerPage';
 
@@ -88,6 +88,16 @@ export default function App() {
             </ModernLayout>
           </ProtectedRoute>
         } />
+        <Route
+  path="/student-feedback"
+  element={
+    <ProtectedRoute>
+      <ModernLayout>
+        <StudentFeedback />
+      </ModernLayout>
+    </ProtectedRoute>
+  }
+/>
         
         <Route path="/assignments" element={
           <ProtectedRoute>

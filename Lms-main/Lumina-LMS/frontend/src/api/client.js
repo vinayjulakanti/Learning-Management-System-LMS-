@@ -80,6 +80,16 @@ export const AttendanceAPI = {
   mySummary: () =>
     client.get(`/me/attendance/summary`),
 };
+export const TimetableAPI = {
+  save: (payload) => client.post("/timetable", payload),
+
+  get: (courseId) =>
+    client.get(`/timetable/${courseId}`),
+
+  delete: (id) =>
+    client.delete(`/timetable/${id}`),
+  myTimetable: () => client.get("/me/timetable"),
+};
 
 // Notifications endpoints
 export const NotificationsAPI = {
@@ -94,6 +104,7 @@ export const NotificationsAPI = {
 export const LeavesAPI = {
   apply: (payload) => client.post('/leaves', payload),
   myLeaves: () => client.get('/leaves/me'),
+  list: () => client.get("/leaves"),
   pending: () => client.get('/leaves/pending'),
   approve: (id) => client.post(`/leaves/${id}/approve`),
   reject: (id) => client.post(`/leaves/${id}/reject`),
@@ -101,11 +112,12 @@ export const LeavesAPI = {
 
 // Fees endpoints
 export const FeesAPI = {
-  list: () => client.get('/fees/fees'),
-  create: (payload) => client.post('/fees/fees', payload),
-  update: (id, payload) => client.put(`/fees/fees/${id}`, payload),
-  delete: (id) => client.delete(`/fees/fees/${id}`),
-  pay: (id, payload) => client.post(`/fees/fees/${id}/pay`, payload),
+  list: () => client.get('/fees'),
+  create: (payload) => client.post('/fees', payload),
+  update: (id, payload) => client.put(`/fees/${id}`, payload),
+  delete: (id) => client.delete(`/fees/${id}`),
+  pay: (id, payload) =>
+  client.post(`/fees/${id}/pay`, payload),
 };
 
 // Certificates endpoints
@@ -137,5 +149,16 @@ export const ActivityAPI = {
   adminStudents: (search) => client.get(`/activity/admin/students${search ? `?search=${encodeURIComponent(search)}` : ''}`),
   adminReport: (studentId, start, end) => client.get(`/activity/admin/report?studentId=${studentId}${start ? `&startDate=${start}` : ''}${end ? `&endDate=${end}` : ''}`),
 };
+export const FeedbackAPI = {
 
+  submit: (payload) =>
+    client.post("/feedback", payload),
+
+  list: () =>
+    client.get("/feedback"),
+
+  myFeedback: () =>
+    client.get("/feedback/me"),
+
+};
 export default client;

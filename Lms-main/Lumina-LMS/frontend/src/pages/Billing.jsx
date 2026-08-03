@@ -6,6 +6,13 @@ export default function Billing() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [showPaymentPopup, setShowPaymentPopup] = useState(false);
+
+const [selectedFee, setSelectedFee] = useState(null);
+
+const [paymentType, setPaymentType] = useState("full");
+
+const [partialAmount, setPartialAmount] = useState("");
   const [currentDate] = useState(new Date().toLocaleDateString('en-IN', { 
     year: 'numeric', 
     month: 'long', 
@@ -167,34 +174,33 @@ export default function Billing() {
     setSelectedPlan(planId);
   };
 
-  const handlePayment = (feeId) => {
-    setLoading(true);
-    // Simulate payment processing
-    setTimeout(() => {
-      setLoading(false);
-      alert('Payment processed successfully!');
-      
-      // Add transaction to history
-      const fee = fees.find(f => f._id === feeId);
-      if (fee) {
-        const newTransaction = {
-          id: Date.now(),
-          date: new Date().toLocaleDateString('en-IN'),
-          description: `Fee Payment - ${fee.name}`,
-          amount: fee.amount,
-          status: 'Paid',
-          method: 'UPI',
-          transactionId: `TXN${Date.now()}`
-        };
-        setTransactionHistory(prev => [newTransaction, ...prev]);
-      }
-      
-      // Update fee status locally
-      setFees(prev => prev.map(fee => 
-        fee._id === feeId ? { ...fee, status: 'paid', paidAt: new Date() } : fee
-      ));
-    }, 2000);
-  };
+  const handlePayment = (fee) => {
+  setSelectedFee(fee);
+  setPaymentType("full");
+  setPartialAmount("");
+  setShowPaymentPopup(true);
+};
+
+const confirmPayment = async () => {
+  try {
+    const amount =
+      paymentType === "full"
+        ? selectedFee.remainingAmount
+        : Number(partialAmount);
+
+    await FeesAPI.pay(selectedFee._id, {
+      amount,
+      paymentMethod: "Online",
+    });
+
+    setShowPaymentPopup(false);
+    await loadFees();
+
+    alert("Payment Successful");
+  } catch (err) {
+    alert(err.response?.data?.message || "Payment Failed");
+  }
+};
 
   const handlePlanPurchase = (planId) => {
     setLoading(true);
@@ -341,7 +347,8 @@ export default function Billing() {
                 <tr style={{borderBottom:'2px solid var(--border)'}}>
                   <th style={{padding:12, textAlign:'left', color:'var(--muted)', fontWeight:600}}>Fee Name</th>
                   <th style={{padding:12, textAlign:'left', color:'var(--muted)', fontWeight:600}}>Amount</th>
-                  <th style={{padding:12, textAlign:'left', color:'var(--muted)', fontWeight:600}}>Type</th>
+                  <th style={{padding:12, textAlign:'left', color:'var(--muted)', fontWeight:600}}>Paid</th>
+                  <th style={{padding:12, textAlign:'left', color:'var(--muted)', fontWeight:600}}>Remaining</th>
                   <th style={{padding:12, textAlign:'left', color:'var(--muted)', fontWeight:600}}>Due Date</th>
                   <th style={{padding:12, textAlign:'left', color:'var(--muted)', fontWeight:600}}>Status</th>
                   <th style={{padding:12, textAlign:'left', color:'var(--muted)', fontWeight:600}}>Description</th>
@@ -380,16 +387,14 @@ export default function Billing() {
                     </td>
                     <td style={{padding:12, color:'var(--text)', fontSize:14}}>{fee.description || '-'}</td>
                     <td style={{padding:12}}>
-                      {fee.status === 'pending' && (
-                        <button 
-                          className="btn primary"
-                          onClick={() => handlePayment(fee._id)}
-                          disabled={loading}
-                          style={{padding:'4px 12px', fontSize:12}}
-                        >
-                          {loading ? 'Processing...' : 'Pay Now'}
-                        </button>
-                      )}
+                      {fee.status !== "paid" && (
+  <button
+    className="btn primary"
+    onClick={() => handlePayment(fee)}
+  >
+    💳 Pay
+  </button>
+)}
                       {fee.status === 'paid' && (
                         <span style={{color: '#10b981', fontSize:12, fontWeight:600}}>✓ Paid</span>
                       )}
@@ -773,6 +778,84 @@ export default function Billing() {
           </div>
         </div>
       )}
+      {showPaymentPopup && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      background: "rgba(0,0,0,.5)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 9999,
+    }}
+  >
+    <div
+      style={{
+        background: "#fff",
+        padding: 30,
+        borderRadius: 15,
+        width: 350,
+      }}
+    >
+      <h3>Choose Payment</h3>
+
+      <label>
+        <input
+          type="radio"
+          checked={paymentType === "full"}
+          onChange={() => setPaymentType("full")}
+        />
+        Full Payment
+      </label>
+
+      <br />
+
+      <label>
+        <input
+          type="radio"
+          checked={paymentType === "partial"}
+          onChange={() => setPaymentType("partial")}
+        />
+        Partial Payment
+      </label>
+
+      {paymentType === "partial" && (
+        <input
+          type="number"
+          placeholder="Enter amount"
+          value={partialAmount}
+          onChange={(e) => setPartialAmount(e.target.value)}
+          style={{
+            width: "100%",
+            marginTop: 15,
+            padding: 10,
+          }}
+        />
+      )}
+
+      <div
+        style={{
+          marginTop: 20,
+          display: "flex",
+          justifyContent: "space-between",
+        }}
+      >
+        <button
+          onClick={() => setShowPaymentPopup(false)}
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={confirmPayment}
+        >
+          Pay
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }

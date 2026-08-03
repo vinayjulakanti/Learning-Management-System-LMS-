@@ -24,12 +24,23 @@ function auth(required = true) {
 
 function requireRole(...roles) {
   return (req, res, next) => {
-    if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
-    const userRole = (req.user.role || '').toLowerCase();
-    const allowed = roles.map(r => String(r).toLowerCase());
-    // Teachers are allowed to access all protected routes
-    if (userRole === 'teacher') return next();
-    if (!allowed.includes(userRole)) return res.status(403).json({ message: 'Forbidden' });
+    console.log("========== ROLE CHECK ==========");
+    console.log("URL:", req.originalUrl);
+    console.log("Method:", req.method);
+    console.log("User Role:", req.user?.role);
+    console.log("Allowed:", roles);
+
+    if (!req.user)
+      return res.status(401).json({ message: "Unauthorized" });
+
+    const userRole = (req.user.role || "").toLowerCase();
+    const allowed = roles.map(r => r.toLowerCase());
+
+    if (userRole === "teacher") return next();
+
+    if (!allowed.includes(userRole))
+      return res.status(403).json({ message: "Forbidden" });
+
     next();
   };
 }

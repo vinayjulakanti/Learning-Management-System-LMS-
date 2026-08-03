@@ -284,11 +284,23 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button onClick={() => setTab('timetable')} className="btn primary" style={{ borderRadius: '8px', padding: '12px 24px', fontSize: '0.9rem', fontWeight: '700', backgroundColor: '#4F46E5' }}>
-              Schedule Manager 📅
-            </button>
-          </div>
+          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+
+  <button
+    onClick={() => nav("/timetable")}
+    className="btn primary"
+    style={{
+      borderRadius: "8px",
+      padding: "12px 24px",
+      background: "#4F46E5"
+    }}
+  >
+    📅 Timetable
+  </button>
+
+   
+
+</div>
         </div>
       </div>
 
