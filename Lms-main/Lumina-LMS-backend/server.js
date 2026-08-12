@@ -53,6 +53,8 @@ app.use('/api', require('./src/routes/timetable'));
 app.use('/api', require('./src/routes/leaves'));
 app.use('/api', require('./src/routes/fees'));
 app.use('/api', require('./src/routes/certificates'));
+app.use("/api/quiz", require("./src/routes/quiz"));
+app.use("/api", require("./src/routes/quiz"));
 app.use('/api', require('./src/routes/tasks'));
 app.use('/api/activity', require('./src/routes/activity'));
 

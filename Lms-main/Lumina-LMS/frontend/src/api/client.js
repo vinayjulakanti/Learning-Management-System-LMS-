@@ -119,6 +119,21 @@ export const FeesAPI = {
   pay: (id, payload) =>
   client.post(`/fees/${id}/pay`, payload),
 };
+export const QuizAPI = {
+
+  list: () => client.get("/quiz"),
+
+  create: (payload) => client.post("/quiz", payload),
+
+  delete: (id) => client.delete(`/quiz/${id}`),
+
+  getCourseQuiz: (courseId) =>
+    client.get(`/quiz/course/${courseId}`),
+
+  submit: (payload) =>
+    client.post("/quiz/submit", payload)
+
+};
 
 // Certificates endpoints
 export const CertificatesAPI = {

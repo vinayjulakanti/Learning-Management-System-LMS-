@@ -362,6 +362,12 @@ const menuItems = [
     roles: ["admin"]
   },
   {
+  label: "Quiz Management",
+  icon: "📝",
+  path: "/quiz-management",
+  roles: ["teacher", "admin"]
+},
+  {
     path: "/fee-management",
     icon: "💰",
     label: "Fee Management",

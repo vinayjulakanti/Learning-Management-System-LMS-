@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lumina-lms-cache-v1';
+const CACHE_NAME = 'lumina-lms-cache-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -51,8 +51,7 @@ self.addEventListener('fetch', (event) => {
         // Cache static files dynamically
         const urlStr = event.request.url;
         if (
-          urlStr.includes('/assets/') || 
-          urlStr.endsWith('.png') || 
+          urlStr.includes('/assets/') ||  
           urlStr.endsWith('.svg') || 
           urlStr.endsWith('.css') || 
           urlStr.endsWith('.js')

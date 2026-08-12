@@ -12,6 +12,7 @@ export default function Attendance(){
   const [selectedCourse, setSelectedCourse] = useState('');
   const [roster, setRoster] = useState([]); // students for selected course
   const [loading, setLoading] = useState(false);
+  const [studentCourse, setStudentCourse] = useState('');
   const [error, setError] = useState('');
   const [statuses, setStatuses] = useState({}); // studentId -> 'present' | 'absent'
   const [myStatus, setMyStatus] = useState(''); // for student view (by date)
@@ -73,40 +74,33 @@ export default function Attendance(){
   };
 
   const loadMy = async () => {
-    if (isTeacher) return;
-    try {
-      console.log('Loading student attendance for date:', date);
-      
-      // Load attendance for the selected date
-      const { data } = await AttendanceAPI.myForDate(date);
-      console.log('Student attendance response for date:', data);
-      
-      // Set status for the selected date
-      setMyStatus(String(data?.status || '').toLowerCase());
-      
-      // Load all attendance records for comprehensive view
-      try {
-        const { data: allData } = await AttendanceAPI.myAll();
-        console.log('All student attendance records:', allData);
-        const allRecords = Array.isArray(allData?.records) ? allData.records : [];
-        setSummary(allRecords);
-        
-        // Also check if there's attendance for the selected date in all records
-        const todayRecords = allRecords.filter(record => record.date === date);
-        if (todayRecords.length > 0) {
-          console.log('Found attendance records for selected date:', todayRecords);
-          setMyStatus(String(todayRecords[0].status || '').toLowerCase());
-        }
-      } catch (error) {
-        console.error('Error loading all attendance records:', error);
-        setSummary([]);
-      }
-    } catch (error) {
-      console.error('Error loading student attendance:', error);
-      setMyStatus('');
-      setSummary([]);
-    }
-  };
+  if (isTeacher) return;
+
+  try {
+    // Attendance for selected date
+    const { data } = await AttendanceAPI.myForDate(date);
+
+    setMyStatus(
+      String(data?.status || '').toLowerCase()
+    );
+
+    // Get all attendance records
+    const { data: allData } = await AttendanceAPI.myAll();
+
+    const records = Array.isArray(allData?.records)
+      ? allData.records
+      : [];
+
+    console.log('Student attendance records:', records);
+
+    setSummary(records);
+
+  } catch (error) {
+    console.error('Error loading student attendance:', error);
+    setMyStatus('');
+    setSummary([]);
+  }
+};
 
   const loadSummary = async () => {
     if (isTeacher) return;
@@ -119,7 +113,6 @@ export default function Attendance(){
   useEffect(()=>{ loadCourses(); /* eslint-disable-next-line */ }, [isTeacher]);
   useEffect(()=>{ loadRosterAndAttendance(); /* eslint-disable-next-line */ }, [selectedCourse, date]);
   useEffect(()=>{ loadMy(); /* eslint-disable-next-line */ }, [date, role]);
-  useEffect(()=>{ loadSummary(); /* eslint-disable-next-line */ }, [role]);
 
   const setFor = async (studentId, status) => {
     const prev = statuses[studentId];
@@ -217,6 +210,92 @@ export default function Attendance(){
 const saveDraft = () => {
   alert("✅ Attendance Saved");
 };
+const studentCourseAttendance = useMemo(() => {
+  if (isTeacher) return [];
+
+  const grouped = {};
+
+  summary.forEach((record) => {
+
+    // Try all possible course formats
+    const courseObject =
+      typeof record.course === 'object'
+        ? record.course
+        : null;
+
+    const courseId =
+      record.courseId ||
+      courseObject?._id ||
+      record.course?._id;
+
+    if (!courseId) return;
+
+    const id = String(courseId);
+
+    if (!grouped[id]) {
+      grouped[id] = {
+        courseId: id,
+        courseTitle:
+          record.courseTitle ||
+          courseObject?.title ||
+          courseObject?.name ||
+          'Course',
+
+        present: 0,
+        absent: 0,
+        total: 0
+      };
+    }
+
+    // If backend already gives summary values
+    if (
+      record.presents !== undefined ||
+      record.total !== undefined
+    ) {
+      grouped[id].present = Number(
+        record.presents || 0
+      );
+
+      grouped[id].total = Number(
+        record.total || 0
+      );
+
+      grouped[id].absent = Math.max(
+        0,
+        grouped[id].total -
+          grouped[id].present
+      );
+
+      return;
+    }
+
+    // Otherwise process individual attendance record
+    const status =
+      String(record.status || '').toLowerCase();
+
+    if (status === 'present') {
+      grouped[id].present += 1;
+    }
+
+    if (status === 'absent') {
+      grouped[id].absent += 1;
+    }
+
+    grouped[id].total += 1;
+  });
+
+  return Object.values(grouped).map((course) => ({
+    ...course,
+
+    percentage:
+      course.total > 0
+        ? Math.round(
+            (course.present / course.total) * 100
+          )
+        : 0
+  }));
+
+}, [summary, isTeacher]);
 
   return (
     <div className="container" style={{padding:16}}>
@@ -311,149 +390,630 @@ const saveDraft = () => {
             )}
           </div>
         ) : (
-          <div style={{marginTop:12}}>
-            <div className="card" style={{maxWidth:640, marginBottom:12}}>
-              <div className="row" style={{alignItems:'center'}}>
-                <div>
-                  <div style={{fontWeight:600}}>{user?.name}</div>
-                  {user?.rollNo && <div className="muted small">Roll no: {user.rollNo}</div>}
-                </div>
-                <div className="tag" style={{marginLeft:'auto'}}>{myStatus ? myStatus.toUpperCase() : '—'}</div>
+  <div style={{ marginTop: 20 }}>
+
+    {/* Student Attendance Header */}
+    <div
+      style={{
+        background: "linear-gradient(135deg, #1e3a8a, #2563eb)",
+        borderRadius: 20,
+        padding: "28px",
+        color: "white",
+        marginBottom: 20,
+        boxShadow: "0 10px 30px rgba(37, 99, 235, 0.18)"
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 20,
+          flexWrap: "wrap"
+        }}
+      >
+        <div>
+          <div
+            style={{
+              fontSize: 14,
+              opacity: 0.85,
+              marginBottom: 6
+            }}
+          >
+            STUDENT ATTENDANCE
+          </div>
+
+          <h2
+            style={{
+              margin: 0,
+              fontSize: 28
+            }}
+          >
+            Attendance Overview
+          </h2>
+
+          <div
+            style={{
+              marginTop: 8,
+              opacity: 0.9
+            }}
+          >
+            {user?.name}
+            {user?.rollNo ? ` • Roll No: ${user.rollNo}` : ""}
+          </div>
+        </div>
+
+        <div
+          style={{
+            background: "rgba(255,255,255,0.14)",
+            padding: "12px 18px",
+            borderRadius: 12,
+            backdropFilter: "blur(8px)"
+          }}
+        >
+          <div style={{ fontSize: 12, opacity: 0.8 }}>
+            Selected Date
+          </div>
+
+          <div style={{ fontWeight: 600 }}>
+            {new Date(date).toLocaleDateString()}
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    {/* Today's Attendance */}
+    <div
+      className="card"
+      style={{
+        marginBottom: 20,
+        padding: 24,
+        borderRadius: 18
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 15
+        }}
+      >
+        <div>
+          <div className="muted small">
+            TODAY'S ATTENDANCE
+          </div>
+
+          <h3 style={{ margin: "5px 0" }}>
+            {new Date(date).toLocaleDateString()}
+          </h3>
+        </div>
+
+        <div
+          style={{
+            padding: "10px 18px",
+            borderRadius: 30,
+            fontWeight: 700,
+            fontSize: 14,
+            background:
+              myStatus === "present"
+                ? "#dcfce7"
+                : myStatus === "absent"
+                ? "#fee2e2"
+                : "#f3f4f6",
+            color:
+              myStatus === "present"
+                ? "#166534"
+                : myStatus === "absent"
+                ? "#991b1b"
+                : "#374151"
+          }}
+        >
+          {myStatus === "present"
+            ? "✓ PRESENT"
+            : myStatus === "absent"
+            ? "✕ ABSENT"
+            : "NOT MARKED"}
+        </div>
+      </div>
+    </div>
+
+
+    {/* Overall Attendance */}
+    <div
+      className="card"
+      style={{
+        marginBottom: 20,
+        padding: 24,
+        borderRadius: 18
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 30,
+          flexWrap: "wrap"
+        }}
+      >
+
+        {/* Circular Percentage */}
+        <div
+          style={{
+            width: 150,
+            height: 150,
+            borderRadius: "50%",
+            background:
+              summary.length === 0
+                ? "#e5e7eb"
+                : `conic-gradient(
+                    #2563eb ${Math.round(
+                      summary.reduce(
+                        (total, item) =>
+                          total + Number(item.presents || 0),
+                        0
+                      ) /
+                      Math.max(
+                        summary.reduce(
+                          (total, item) =>
+                            total + Number(item.total || 0),
+                          0
+                        ),
+                        1
+                      ) *
+                      100
+                    )}%,
+                    #e5e7eb 0
+                  )`,
+            display: "grid",
+            placeItems: "center",
+            flexShrink: 0
+          }}
+        >
+          <div
+            style={{
+              width: 112,
+              height: 112,
+              borderRadius: "50%",
+              background: "var(--panel)",
+              display: "grid",
+              placeItems: "center",
+              textAlign: "center"
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  fontSize: 28,
+                  fontWeight: 700,
+                  color: "#2563eb"
+                }}
+              >
+                {summary.length > 0
+                  ? Math.round(
+                      (summary.reduce(
+                        (total, item) =>
+                          total + Number(item.presents || 0),
+                        0
+                      ) /
+                        Math.max(
+                          summary.reduce(
+                            (total, item) =>
+                              total + Number(item.total || 0),
+                            0
+                          ),
+                          1
+                        )) *
+                        100
+                    )
+                  : 0}
+                %
               </div>
-              <div className="muted small">Date: {new Date(date).toLocaleDateString()}</div>
-            </div>
 
-            {/* Attendance Bar Graph */}
-            <div className="card" style={{maxWidth:980, marginBottom:12}}>
-              <h3 style={{margin:'6px 0 12px'}}>📊 Course-wise Attendance Overview</h3>
-              {summary.length === 0 ? (
-                <div className="muted">No attendance records yet.</div>
-              ) : (
-                <div style={{display:'grid', gap:16}}>
-                  {summary.map(item => (
-                    <div key={String(item.courseId || item.courseTitle)} style={{
-                      border:'1px solid var(--border)',
-                      borderRadius:12,
-                      padding:16,
-                      background:'var(--panel)'
-                    }}>
-                      <div className="row" style={{justifyContent:'space-between', marginBottom:8}}>
-                        <div style={{fontWeight:600, fontSize:16}}>{item.courseTitle || 'Course'}</div>
-                        <div className="muted small" style={{fontSize:14}}>
-                          {item.percentage}% ({item.presents}/{item.total} days)
-                        </div>
-                      </div>
-                      
-                      {/* Bar Graph */}
-                      <div style={{marginBottom:8}}>
-                        <div style={{height:30, background:'#f3f4f6', borderRadius:15, overflow:'hidden', position:'relative'}}>
-                          <div style={{
-                            width:`${Math.max(0, Math.min(100, item.percentage))}%`,
-                            height:'100%',
-                            background:item.percentage >= 75 ? '#10b981' : item.percentage >= 50 ? '#f59e0b' : '#ef4444',
-                            borderRadius:15,
-                            transition:'width 0.3s ease',
-                            position:'relative'
-                          }}>
-                            <div style={{
-                              position:'absolute',
-                              right:8,
-                              top:'50%',
-                              transform:'translateY(-50%)',
-                              color:'white',
-                              fontSize:12,
-                              fontWeight:600
-                            }}>
-                              {item.percentage}%
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Attendance Details */}
-                      <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:8, fontSize:12}}>
-                        <div style={{textAlign:'center', padding:8, background:'#f0fdf4', borderRadius:8}}>
-                          <div style={{color:'#166534', fontWeight:600, fontSize:14}}>{item.presents}</div>
-                          <div style={{color:'#166534'}}>Present</div>
-                        </div>
-                        <div style={{textAlign:'center', padding:8, background:'#fef2f2', borderRadius:8}}>
-                          <div style={{color:'#dc2626', fontWeight:600, fontSize:14}}>{item.total - item.presents}</div>
-                          <div style={{color:'#dc2626'}}>Absent</div>
-                        </div>
-                        <div style={{textAlign:'center', padding:8, background:'#f3f4f6', borderRadius:8}}>
-                          <div style={{color:'#374151', fontWeight:600, fontSize:14}}>{item.total}</div>
-                          <div style={{color:'#374151'}}>Total</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Attendance Logs */}
-            <div className="card" style={{maxWidth:980}}>
-              <h3 style={{margin:'6px 0 12px'}}>📋 Attendance Logs</h3>
-              <div style={{display:'grid', gap:8}}>
-                {/* Present Logs */}
-                <div style={{
-                  border:'1px solid #10b981',
-                  borderRadius:8,
-                  padding:12,
-                  background:'#f0fdf4'
-                }}>
-                  <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:8}}>
-                    <div style={{fontSize:20}}>✅</div>
-                    <div style={{fontWeight:600, color:'#166534'}}>Present Days</div>
-                  </div>
-                  <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(120px, 1fr))', gap:4}}>
-                    {summary.map(item => (
-                      <div key={`present-${item.courseId}`} style={{
-                        padding:4,
-                        background:'white',
-                        borderRadius:4,
-                        fontSize:11,
-                        textAlign:'center',
-                        border:'1px solid #dcfce7'
-                      }}>
-                        <div style={{fontWeight:600, color:'#166534'}}>{item.courseTitle}</div>
-                        <div style={{color:'#166534'}}>{item.presents} days</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Absent Logs */}
-                <div style={{
-                  border:'1px solid #ef4444',
-                  borderRadius:8,
-                  padding:12,
-                  background:'#fef2f2'
-                }}>
-                  <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:8}}>
-                    <div style={{fontSize:20}}>❌</div>
-                    <div style={{fontWeight:600, color:'#dc2626'}}>Absent Days</div>
-                  </div>
-                  <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(120px, 1fr))', gap:4}}>
-                    {summary.map(item => (
-                      <div key={`absent-${item.courseId}`} style={{
-                        padding:4,
-                        background:'white',
-                        borderRadius:4,
-                        fontSize:11,
-                        textAlign:'center',
-                        border:'1px solid #fecaca'
-                      }}>
-                        <div style={{fontWeight:600, color:'#dc2626'}}>{item.courseTitle}</div>
-                        <div style={{color:'#dc2626'}}>{item.total - item.presents} days</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              <div className="muted small">
+                Overall
               </div>
             </div>
           </div>
-        )}
+        </div>
+
+
+        {/* Overall Statistics */}
+        <div style={{ flex: 1, minWidth: 250 }}>
+          <div className="muted small">
+            OVERALL ATTENDANCE
+          </div>
+
+          <h2 style={{ margin: "5px 0 15px" }}>
+            Attendance Summary
+          </h2>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit,minmax(120px,1fr))",
+              gap: 10
+            }}
+          >
+
+            <div
+              style={{
+                padding: 14,
+                borderRadius: 12,
+                background: "#eff6ff"
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 22,
+                  fontWeight: 700,
+                  color: "#2563eb"
+                }}
+              >
+                {summary.reduce(
+                  (total, item) =>
+                    total + Number(item.total || 0),
+                  0
+                )}
+              </div>
+
+              <div className="muted small">
+                Total Classes
+              </div>
+            </div>
+
+
+            <div
+              style={{
+                padding: 14,
+                borderRadius: 12,
+                background: "#f0fdf4"
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 22,
+                  fontWeight: 700,
+                  color: "#16a34a"
+                }}
+              >
+                {summary.reduce(
+                  (total, item) =>
+                    total + Number(item.presents || 0),
+                  0
+                )}
+              </div>
+
+              <div className="muted small">
+                Present
+              </div>
+            </div>
+
+
+            <div
+              style={{
+                padding: 14,
+                borderRadius: 12,
+                background: "#fef2f2"
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 22,
+                  fontWeight: 700,
+                  color: "#dc2626"
+                }}
+              >
+                {summary.reduce(
+                  (total, item) =>
+                    total +
+                    (Number(item.total || 0) -
+                      Number(item.presents || 0)),
+                  0
+                )}
+              </div>
+
+              <div className="muted small">
+                Absent
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    {/* Subject-wise Attendance */}
+    <div
+      className="card"
+      style={{
+        padding: 24,
+        borderRadius: 18
+      }}
+    >
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 20
+        }}
+      >
+        <div>
+          <div className="muted small">
+            SUBJECT PERFORMANCE
+          </div>
+
+          <h3 style={{ margin: "5px 0" }}>
+            📚 Subject-wise Attendance
+          </h3>
+        </div>
+
+        <div className="tag">
+          {summary.length} Subjects
+        </div>
+      </div>
+
+
+      {summary.length === 0 ? (
+        <div className="muted">
+          No attendance records yet.
+        </div>
+      ) : (
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(auto-fit,minmax(280px,1fr))",
+            gap: 16
+          }}
+        >
+
+          {summary.map((item) => {
+
+            const percentage = Number(
+              item.percentage || 0
+            );
+
+            const present =
+              Number(item.presents || 0);
+
+            const total =
+              Number(item.total || 0);
+
+            const absent =
+              Math.max(0, total - present);
+
+            const status =
+              percentage >= 75
+                ? "Good"
+                : percentage >= 60
+                ? "Warning"
+                : "Low";
+
+            return (
+              <div
+                key={String(
+                  item.courseId ||
+                  item.courseTitle
+                )}
+                style={{
+                  border: "1px solid var(--border)",
+                  borderRadius: 16,
+                  padding: 18,
+                  background: "var(--panel)",
+                  boxShadow:
+                    "0 4px 14px rgba(0,0,0,0.05)"
+                }}
+              >
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 10,
+                    marginBottom: 18
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        fontWeight: 700,
+                        fontSize: 16
+                      }}
+                    >
+                      {item.courseTitle || "Course"}
+                    </div>
+
+                    <div className="muted small">
+                      {present} present / {total} classes
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      fontWeight: 700,
+                      color:
+                        percentage >= 75
+                          ? "#16a34a"
+                          : percentage >= 60
+                          ? "#d97706"
+                          : "#dc2626"
+                    }}
+                  >
+                    {percentage}%
+                  </div>
+                </div>
+
+
+                {/* Progress */}
+                <div
+                  style={{
+                    height: 10,
+                    background: "#e5e7eb",
+                    borderRadius: 10,
+                    overflow: "hidden",
+                    marginBottom: 14
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        Math.max(0, percentage)
+                      )}%`,
+                      height: "100%",
+                      background:
+                        percentage >= 75
+                          ? "#22c55e"
+                          : percentage >= 60
+                          ? "#f59e0b"
+                          : "#ef4444",
+                      borderRadius: 10,
+                      transition:
+                        "width 0.4s ease"
+                    }}
+                  />
+                </div>
+
+
+                {/* Stats */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(3,1fr)",
+                    gap: 8
+                  }}
+                >
+
+                  <div
+                    style={{
+                      textAlign: "center",
+                      padding: 9,
+                      borderRadius: 10,
+                      background: "#f0fdf4"
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontWeight: 700,
+                        color: "#16a34a"
+                      }}
+                    >
+                      {present}
+                    </div>
+
+                    <div
+                      className="small"
+                      style={{
+                        color: "#166534"
+                      }}
+                    >
+                      Present
+                    </div>
+                  </div>
+
+
+                  <div
+                    style={{
+                      textAlign: "center",
+                      padding: 9,
+                      borderRadius: 10,
+                      background: "#fef2f2"
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontWeight: 700,
+                        color: "#dc2626"
+                      }}
+                    >
+                      {absent}
+                    </div>
+
+                    <div
+                      className="small"
+                      style={{
+                        color: "#991b1b"
+                      }}
+                    >
+                      Absent
+                    </div>
+                  </div>
+
+
+                  <div
+                    style={{
+                      textAlign: "center",
+                      padding: 9,
+                      borderRadius: 10,
+                      background: "#f3f4f6"
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontWeight: 700
+                      }}
+                    >
+                      {total}
+                    </div>
+
+                    <div className="muted small">
+                      Total
+                    </div>
+                  </div>
+
+                </div>
+
+
+                {/* Attendance status */}
+                <div
+                  style={{
+                    marginTop: 14,
+                    textAlign: "center",
+                    padding: 7,
+                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    background:
+                      percentage >= 75
+                        ? "#dcfce7"
+                        : percentage >= 60
+                        ? "#fef3c7"
+                        : "#fee2e2",
+                    color:
+                      percentage >= 75
+                        ? "#166534"
+                        : percentage >= 60
+                        ? "#92400e"
+                        : "#991b1b"
+                  }}
+                >
+                  {percentage >= 75
+                    ? "✓ Attendance is good"
+                    : percentage >= 60
+                    ? "⚠ Attendance needs attention"
+                    : "✕ Low attendance"}
+                </div>
+
+              </div>
+            );
+          })}
+
+        </div>
+      )}
+
+    </div>
+
+  </div>
+)}
       </div>
     </div>
   );

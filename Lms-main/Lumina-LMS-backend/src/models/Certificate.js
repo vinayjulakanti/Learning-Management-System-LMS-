@@ -20,10 +20,12 @@ const certificateSchema = new mongoose.Schema({
     required: true
   },
   certificateId: {
-    type: String,
-    required: true,
-    unique: true
-  },
+  type: String,
+  unique: true,
+  default: () =>
+    "CERT-" +
+    Date.now()
+},
   grade: {
     type: String,
     required: true

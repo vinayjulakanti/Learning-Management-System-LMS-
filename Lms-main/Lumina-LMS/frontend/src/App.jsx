@@ -18,6 +18,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import Settings from './pages/Settings';
 import About from './pages/About';
 import FAQ from './pages/FAQ';
+import Certificate from "./pages/Certificate";
 import Attendance from './pages/Attendance';
 import Holidays from './pages/Holidays';
 import Grades from './pages/Grades';
@@ -28,6 +29,8 @@ import Billing from './pages/Billing';
 import Messages from './pages/Messages';
 import FeeManagement from './pages/FeeManagement';
 import Tasks from './pages/Tasks';
+import QuizManagement from "./pages/QuizManagement";
+import StudentQuiz from "./pages/StudentQuiz";
 import Timetable from './pages/Timetable';
 import ResetPassword from './pages/ResetPassword';
 import ForgotPassword from './pages/ForgotPassword';
@@ -80,6 +83,14 @@ export default function App() {
             </ModernLayout>
           </ProtectedRoute>
         } />
+        <Route
+  path="/quiz/:courseId"
+  element={
+    <ProtectedRoute roles={["student"]}>
+      <StudentQuiz />
+    </ProtectedRoute>
+  }
+/>
         
         <Route path="/courses" element={
           <ProtectedRoute>
@@ -88,6 +99,14 @@ export default function App() {
             </ModernLayout>
           </ProtectedRoute>
         } />
+        <Route
+  path="/quiz-management"
+  element={
+    <ProtectedRoute roles={["teacher", "admin"]}>
+      <QuizManagement />
+    </ProtectedRoute>
+  }
+/>
         <Route
   path="/student-feedback"
   element={
@@ -117,16 +136,16 @@ export default function App() {
           </ProtectedRoute>
         } />
         
-        <Route path="/certificates" element={
-          <ProtectedRoute>
-            <ModernLayout>
-              <div style={{ padding: '24px' }}>
-                <h2>Certificates</h2>
-                <p>Your certificates will appear here...</p>
-              </div>
-            </ModernLayout>
-          </ProtectedRoute>
-        } />
+        <Route
+  path="/certificates"
+  element={
+    <ProtectedRoute>
+      <ModernLayout>
+        <Certificate />
+      </ModernLayout>
+    </ProtectedRoute>
+  }
+/>
         
         {/* Original Layout Routes */}
         <Route path="/profile" element={
