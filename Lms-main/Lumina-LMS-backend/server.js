@@ -6,8 +6,19 @@ const { connectDB } = require('./src/config/db');
 const Course = require('./src/models/Course');
 
 const app = express();
+const allowedOrigins = [
+  'https://lumina-lms-iota.vercel.app',
+  'https://learning-management-system-lms-fawn.vercel.app'
+];
+
 app.use(cors({
-  origin: 'https://lumina-lms-iota.vercel.app',
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
