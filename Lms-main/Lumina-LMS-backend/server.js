@@ -6,7 +6,10 @@ const { connectDB } = require('./src/config/db');
 const Course = require('./src/models/Course');
 
 const app = express();
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({
+  origin: 'https://lumina-lms-iota.vercel.app',
+  credentials: true
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cookieParser());
