@@ -21,6 +21,7 @@ export const AuthAPI = {
   updateMe: (payload) => client.put('/auth/me', payload),
   forgot: (payload) => client.post('/auth/forgot', payload),
   reset: (payload) => client.post('/auth/reset', payload),
+  changePassword: (payload) => client.post('/auth/change-password', payload),
 };
 
 // Courses endpoints used across pages
